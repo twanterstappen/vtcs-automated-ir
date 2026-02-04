@@ -1,0 +1,25 @@
+---
+# Role mappings for OpenSearch Security
+_meta:
+  type: "rolesmapping"
+  config_version: 2
+
+# Standard Wazuh/OpenSearch role mappings (required for basic functionality)
+all_access:
+  reserved: false
+  backend_roles:
+    - "admin"
+  description: "Maps admin to all_access role"
+
+kibana_server:
+  reserved: true
+  users:
+    - "kibanaserver"
+  description: "Maps kibanaserver user"
+
+# Map custom_readonly_role to backend roles or users
+custom_readonly_role:
+  reserved: false
+  backend_roles:
+    - "custom_readonly"
+  description: "Mapping for custom read-only role"

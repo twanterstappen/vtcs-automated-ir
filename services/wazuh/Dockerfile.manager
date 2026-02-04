@@ -1,0 +1,59 @@
+FROM wazuh/wazuh-manager:4.14.1
+
+# Install gettext for envsubst, jq for JSON parsing, and Python requests for custom integrations
+RUN yum install -y gettext python3 python3-pip dos2unix jq && \
+    pip3 install requests>=2.28.0 && \
+    yum clean all
+
+# Copy configuration files
+COPY ./config/wazuh_cluster/local_rules.xml /var/ossec/etc/rules/local_rules.xml
+COPY ./config/wazuh_cluster/agent.conf /var/ossec/etc/shared/default/agent.conf
+COPY ./config/wazuh_cluster/wazuh_manager.conf /etc/ossec-template.conf
+
+# Copy and configure custom malware-api integration
+COPY ./integrations/custom-malware /var/ossec/integrations/custom-malware
+RUN dos2unix /var/ossec/integrations/custom-malware && \
+    chmod 750 /var/ossec/integrations/custom-malware && \
+    chown root:wazuh /var/ossec/integrations/custom-malware
+
+# Copy and configure remove-threat script
+COPY ./scripts/remove-threat.py /var/ossec/etc/shared/default/remove-threat.py
+RUN dos2unix /var/ossec/etc/shared/default/remove-threat.py && \
+    chmod 750 /var/ossec/etc/shared/default/remove-threat.py && \
+    chown root:wazuh /var/ossec/etc/shared/default/remove-threat.py
+
+
+
+COPY ./integrations/custom-telegram /var/ossec/integrations/custom-telegram
+RUN dos2unix /var/ossec/integrations/custom-telegram && \
+    chmod 750 /var/ossec/integrations/custom-telegram && \
+    chown root:wazuh /var/ossec/integrations/custom-telegram
+
+
+
+
+# Create entrypoint script to substitute environment variables and fix permissions
+RUN printf '#!/bin/bash\n\
+# Fix permissions for custom integrations on startup\n\
+if [ -f /var/ossec/integrations/custom-malware ]; then\n\
+    dos2unix /var/ossec/integrations/custom-malware 2>/dev/null || true\n\
+    chmod 750 /var/ossec/integrations/custom-malware\n\
+    chown root:wazuh /var/ossec/integrations/custom-malware\n\
+fi\n\
+\n\
+# Substitute environment variables in configuration\n\
+envsubst < /etc/ossec-template.conf > /var/ossec/etc/ossec.conf\n\
+\n\
+# Substitute environment variables in custom Telegram integration (simple)\n\
+if [ -f /var/ossec/integrations/custom-telegram ]; then\n\
+    envsubst '"'"'$TELEGRAM_BOT_TOKEN $TELEGRAM_CHAT_ID'"'"' < /var/ossec/integrations/custom-telegram > /var/ossec/integrations/custom-telegram.r\n\
+    mv /var/ossec/integrations/custom-telegram.r /var/ossec/integrations/custom-telegram\n\
+    chmod 750 /var/ossec/integrations/custom-telegram\n\
+    chown root:wazuh /var/ossec/integrations/custom-telegram\n\
+fi\n\
+\n\
+# Start Wazuh\n\
+exec /init\n' > /entrypoint-wrapper.sh && \
+    chmod +x /entrypoint-wrapper.sh
+
+ENTRYPOINT ["/entrypoint-wrapper.sh"]

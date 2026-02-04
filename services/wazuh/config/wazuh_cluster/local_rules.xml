@@ -1,0 +1,89 @@
+<!-- Local rules -->
+
+<!-- Modify it at your will. -->
+<!-- Copyright (C) 2015, Wazuh Inc. -->
+
+<!-- Example -->
+<group name="local,syslog,sshd,">
+
+  <!--
+  Dec 10 01:02:02 host sshd[1234]: Failed none for root from 1.1.1.1 port 1066 ssh2
+  -->
+  <rule id="100001" level="5">
+    <if_sid>5716</if_sid>
+    <srcip>1.1.1.1</srcip>
+    <description>sshd: authentication failed from IP 1.1.1.1.</description>
+    <group>authentication_failed,pci_dss_10.2.4,pci_dss_10.2.5,</group>
+  </rule>
+
+</group>
+<!-- Active Response alerts -->
+<group name="active_response,malware,">
+
+  <!-- Success -->
+<rule id="100130" level="12">
+  <if_sid>657</if_sid>
+  <match>Successfully removed threat</match>
+  <description>Active Response: removed threat at $(parameters.alert.syscheck.path)</description>
+  <group>active_response,malware,</group>
+</rule>
+
+  <rule id="100134" level="14">
+    <if_sid>657</if_sid>
+    <match>Error removing threat</match>
+    <description>Active Response: FAILED to remove threat at $(parameters.alert.syscheck.path)</description>
+    <group>active_response,error,malware,</group>
+  </rule>
+
+</group>
+
+<!-- Malware-API Integration Rules -->
+<group name="malware-api,">
+
+  <!-- File scanned and clean -->
+  <rule id="100099" level="5">
+    <decoded_as>json</decoded_as>
+    <field name="integration">malware-api</field>
+    <field name="malware_api.malware">false</field>
+    <description>Malware-API: No malware detected in file: $(syscheck.path)</description>
+    <group>malware,</group>
+  </rule>
+
+  <!-- Base rule: Malware detected by malware-api integration -->
+  <rule id="100100" level="13">
+    <field name="integration">malware-api</field>
+    <field name="malware_api.malware">true</field>
+    <description>Malware-API: $(malware_api.title) detected on $(agent.name) by $(syscheck.uname_after): $(syscheck.path)</description>
+    <mitre>
+      <id>T1204</id>
+    </mitre>
+    <group>malware,pci_dss_11.4,gdpr_IV_35.7.d,nist_800_53_SI.3,tsc_CC6.1,tsc_CC6.8,tsc_CC7.2,tsc_CC7.3,</group>
+  </rule>
+
+  <!-- Linux-specific: path contains forward slash -->
+  <rule id="100101" level="13">
+    <if_sid>100100</if_sid>
+    <field name="syscheck.path">/</field>
+    <description>Malware-API: $(malware_api.title) detected on $(agent.name) by $(syscheck.uname_after): $(syscheck.path)</description>
+    <group>malware,</group>
+  </rule>
+
+  <!-- Windows-specific: path contains backslash -->
+  <rule id="100102" level="13">
+    <if_sid>100100</if_sid>
+    <field name="syscheck.path">\\</field>
+    <description>Malware-API: $(malware_api.title) detected on $(agent.name) by $(syscheck.uname_after): $(syscheck.path)</description>
+    <group>malware,</group>
+  </rule>
+
+</group>
+<!-- AppArmor suppression rules -->
+<group name="apparmor,">
+
+  <!-- Suppress AppArmor denied alerts -->
+  <rule id="100200" level="0">
+    <match>apparmor="DENIED"</match>
+    <description>AppArmor DENIED alert suppressed</description>
+  </rule>
+
+</group>

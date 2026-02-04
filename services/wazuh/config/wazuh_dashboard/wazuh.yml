@@ -1,0 +1,12 @@
+hosts:
+  - 1513629884013:
+        # Internal ID used by the dashboard to reference this Wazuh API host
+        url: "https://wazuh.manager"
+        port: 55000
+        username: wazuh-wui
+        password: "MyS3cr37P450r.*-" # Credentials used by the dashboard to access the Wazuh API
+        run_as: false
+
+# Custom branding assets shown in the Wazuh dashboard UI
+customization.logo.app: "custom/images/customization.logo.app.svg?v=1765802322859"
+customization.logo.healthcheck: "custom/images/customization.logo.healthcheck.svg?v=1765972303240"

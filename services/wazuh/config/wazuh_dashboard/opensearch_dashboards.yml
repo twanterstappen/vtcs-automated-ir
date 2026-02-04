@@ -1,0 +1,33 @@
+server.host: 0.0.0.0 # Bind to all interfaces so the dashboard is reachable from Docker/host
+server.port: 5601
+
+# OpenSearch backend used by the dashboard 
+opensearch.hosts: https://wazuh.indexer:9200
+opensearch.ssl.verificationMode: certificate
+
+# Required headers for security plugin and tenant context
+opensearch.requestHeadersWhitelist: ["securitytenant","Authorization"]
+
+# Disable multi-tenancy to enforce a single shared dashboard space
+opensearch_security.multitenancy.enabled: false
+opensearch_security.readonly_mode.roles: ["kibana_read_only"]
+
+# Enable HTTPS for the dashboard UI
+server.ssl.enabled: true
+server.ssl.key: "/usr/share/wazuh-dashboard/certs/wazuh-dashboard-key.pem"
+server.ssl.certificate: "/usr/share/wazuh-dashboard/certs/wazuh-dashboard.pem"
+opensearch.ssl.certificateAuthorities: [ "/usr/share/wazuh-dashboard/certs/root-ca.pem" ]
+
+# Default landing page after login
+uiSettings.overrides.defaultRoute: /app/wz-home
+
+# Session expiration settings
+opensearch_security.cookie.ttl: 900000
+opensearch_security.session.ttl: 900000
+opensearch_security.session.keepalive: true
+
+# Custom branding shown during dashboard loading
+opensearchDashboards.branding:
+  loadingLogo:
+    defaultUrl: "https://www.publiekmelden.nl/images/logo/amsterdam.svg"
+    darkModeUrl: "https://www.publiekmelden.nl/images/logo/amsterdam.svg"

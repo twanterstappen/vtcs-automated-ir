@@ -1,0 +1,25 @@
+---
+# Custom roles for OpenSearch Security
+_meta:
+  type: "roles"
+  config_version: 2
+
+# Custom read-only role with global tenant access
+custom_readonly_role:
+  reserved: false
+  cluster_permissions:
+    - "cluster_composite_ops_ro"
+  index_permissions:
+    - index_patterns:
+        - "*"
+      allowed_actions:
+        - "read"
+        - "indices:data/read/*"
+        - "indices:admin/mappings/get"
+        - "indices:admin/get"
+  tenant_permissions:
+    - tenant_patterns:
+        - "global_tenant"
+      allowed_actions:
+        - "kibana_all_read"
+  description: "Custom read-only role with cluster ops, all indices read access, and global tenant"

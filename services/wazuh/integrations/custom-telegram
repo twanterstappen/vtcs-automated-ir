@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# Set via envsubst at container startup (Dockerfile.manager) or environment.
+# These placeholders will be rendered by envsubst into concrete values.
+BOT_TOKEN="${TELEGRAM_BOT_TOKEN}"
+CHAT_ID="${TELEGRAM_CHAT_ID}"
+
+ALERT_FILE=$1
+
+# Use jq for robust JSON parsing (handles escaped backslashes in Windows paths/explanations)
+DESCRIPTION=$(jq -r '(.rule.description // .description // "")' "$ALERT_FILE")
+AGENT=$(jq -r '(.agent.name // .agent // .name // "")' "$ALERT_FILE")
+IP=$(jq -r '(.agent.ip // .agent // .ip // .srcip // "")' "$ALERT_FILE")
+EXPLANATION=$(jq -r '(.explanation // .parameters.alert.malware_api.explanation // .data.malware_api.explanation // "")' "$ALERT_FILE")
+
+# Basic HTML escape to keep Telegram HTML parse_mode safe
+html_escape() {
+	echo "$1" | sed -e 's/&/\\&amp;/g' -e 's/</\\&lt;/g' -e 's/>/\\&gt;/g'
+}
+
+DESC_ESC=$(html_escape "$DESCRIPTION")
+AGENT_ESC=$(html_escape "$AGENT")
+IP_ESC=$(html_escape "$IP")
+EXPL_ESC=$(html_escape "$EXPLANATION")
+
+MESSAGE="<b>🚨 Wazuh Alert</b>
+
+<b>Rule:</b> $DESC_ESC
+
+<b>Agent:</b> $AGENT_ESC
+
+<b>IP:</b> <code>$IP_ESC</code>"
+
+# Append explanation if available
+if [ -n "$EXPLANATION" ]; then
+MESSAGE="$MESSAGE
+
+<b>Explanation:</b> $EXPL_ESC"
+fi
+
+# Send the formatted message to Telegram using HTML parse mode
+curl -s -X POST \
+-d "chat_id=$CHAT_ID" \
+ -d "parse_mode=HTML" \
+--data-urlencode "text=$MESSAGE" \
+"https://api.telegram.org/bot$BOT_TOKEN/sendMessage"
