@@ -47,11 +47,11 @@ flowchart TB
    - Windows (PowerShell): `Copy-Item .env.example .env`
    - macOS/Linux (bash): `cp .env.example .env`
 2. Open `.env` and set the passwords:
-   - `ADMIN_PASSWORD` — used by Wazuh indexer/admin
-   - `KIBANASERVER_PASSWORD` — used by the Wazuh dashboard
-   - `READONLY_USER_PASSWORD` - used for normal users that are only allowed to use Wazuh.
-   - Optionally change `MALWARE_API_KEY` and Ollama settings
-   - Pick strong, memorable passwords.
+  - `ADMIN_PASSWORD` - used by Wazuh indexer/admin
+  - `KIBANASERVER_PASSWORD` - used by the Wazuh dashboard
+  - `READONLY_USER_PASSWORD` - used for normal users that are only allowed to use Wazuh.
+  - Optionally change `MALWARE_API_KEY` and Ollama settings.
+  - Pick strong, memorable passwords and do not commit `.env` to source control. keep it private and secure.
 
 ## 2) Run the setup (one time)
 Run the script that matches your system from the project root:
@@ -98,16 +98,18 @@ Docker volumes keep your data between runs (malware API DB, Wazuh data, dashboar
 
 
 ## How to deploy the agent
-This will be an easy step-to-step how to install the agent
+This is a step-by-step guide to install the agent.
 
-- Step 1. Extract the directory: 'install-wazuh-agent-gui-windows.zip'.
-- Step 2. Click on: 'install-wazuh-agent-gui.exe' and when the notification appears click: 'yes'.
-- Step 3. In the field of: 'Wazuh manager IP' type the IP adress of the default gateway of Wazuh. Mostly it IP adres will is like: 'x.x.x.1'. Also, it will be adviced to type a name of the agent you want to create. That way you know what the agent is that you have created. Then you can click on: 'installation'. You will get a notification that the Wazuh agent is installed succesfully. It is also adviced to clear the log by clicking: 'Clear log'
-- Step 4. In order to see if everything is installed you click on the directory: 'ossec-agent'. Then you click on the directory: 'active-response'. Then you click on the directory: 'bin'. There you see 4 files where on of the files is called: 'remove-threat.exe' This will be further down in this README.md
+- Step 1. Extract the `install-wazuh-agent-gui-windows.zip` directory.
+- Step 2. Run `install-wazuh-agent-gui.exe` and confirm the User Account Control prompt when it appears.
+- Step 3. In the 'Wazuh manager IP' field, enter the Wazuh manager's IP address (usually the network gateway, e.g. x.x.x.1). It's advised to enter a descriptive agent name so you can identify it later. Click 'Install' to proceed. You will receive a notification that the Wazuh agent was installed successfully. We recommend clearing the log after installation by clicking 'Clear log'.
+- Step 4. To verify the installation, navigate to 'ossec-agent' → 'active-response' → 'bin' where you'll find files including `remove-threat.exe`. (This is described later in this README.)
 
 ## How does the notification work
-If the user (accidently) opens the malware in Windows and Linux the Wazuh detects the malware and deletes it. This feature is possible, because there is a file (remove-threat.exe) that was mentioned earlier in the README.md. The question that still remains is how can the user see what has been happening.
+If a user accidentally opens malware on Windows or Linux, Wazuh can detect and delete the file. This behavior is implemented by the `remove-threat.exe` active response (mentioned above).
 
-- Step 1. Go to: 'Summary'. That is the first option under section: 'Agents management'
-- Step 2. Click on the host where the user (accidently) clicked on the malware.
-- Step 3. You can see in the rule description that the malware has been detected, deleted and it tells the location where the malware was. 
+Warning: the `remove-threat.exe` active response may permanently delete files. Test this in a safe environment and ensure you have backups before enabling it on production systems.
+
+- Step 1. Go to 'Summary' (first option under 'Agents management').
+- Step 2. Click the host where the user opened the malware.
+- Step 3. In the rule description you can see that the malware was detected and whether it was deleted or quarantined, including the file location.
